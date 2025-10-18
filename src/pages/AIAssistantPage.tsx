@@ -5,7 +5,7 @@ import { MessageCircle, Brain, TrendingUp, Target, Lightbulb, BarChart3 } from "
 
 const AIAssistantPage = () => {
   return (
-    <ProfessionalPageWrapper className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <ProfessionalPageWrapper className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-16">
       <div className="space-y-8">
         {/* Page Header */}
         <div className="text-center space-y-4">

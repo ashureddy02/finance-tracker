@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { MessageCircle, Send, Bot, User, Lightbulb, TrendingUp } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { MessageCircle, Send, Bot, User, Lightbulb, TrendingUp, Calculator, Target, DollarSign, BarChart3, Zap } from "lucide-react";
 
 interface Message {
   id: string;
@@ -11,27 +12,39 @@ interface Message {
   sender: "user" | "buddy";
   timestamp: Date;
   suggestions?: string[];
+  type?: "text" | "calculation" | "chart" | "action";
+  data?: any;
 }
 
 const BudgetBuddy = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
-      text: "👋 **Welcome to your Personal Financial Assistant!**\n\nI'm here to help you take control of your finances and achieve your money goals. I can assist you with:\n\n💰 **Budget Planning & Tracking**\n📊 **Spending Analysis**\n🎯 **Goal Setting**\n💼 **Investment Advice**\n💳 **Debt Management**\n🚨 **Emergency Fund Planning**\n\nWhat would you like to work on today?",
+      text: "👋 **Welcome to your Advanced Financial Assistant!**\n\nI'm your AI-powered financial advisor with advanced capabilities:\n\n🤖 **Smart Features:**\n• Real-time budget calculations\n• Interactive financial tools\n• Personalized recommendations\n• Goal tracking & projections\n• Investment analysis\n• Debt optimization strategies\n\n💡 **Quick Actions:**\n• Calculate compound interest\n• Plan retirement corpus\n• Optimize tax savings\n• Analyze spending patterns\n• Set up emergency fund\n\nWhat financial challenge can I help you solve today?",
       sender: "buddy",
       timestamp: new Date(),
+      type: "text",
       suggestions: [
-        "Create a budget",
-        "Analyze my spending",
-        "Set savings goals",
-        "Plan investments",
-        "Manage debt",
-        "Build emergency fund"
+        "Calculate retirement corpus",
+        "Plan emergency fund",
+        "Optimize tax savings",
+        "Analyze spending patterns",
+        "Calculate compound interest",
+        "Plan investment strategy"
       ]
     }
   ]);
   
   const [inputMessage, setInputMessage] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    if (scrollAreaRef.current) {
+      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
+    }
+  }, [messages]);
 
   const handleSendMessage = () => {
     if (!inputMessage.trim()) return;
@@ -40,12 +53,40 @@ const BudgetBuddy = () => {
       id: Date.now().toString(),
       text: inputMessage,
       sender: "user",
-      timestamp: new Date()
+      timestamp: new Date(),
+      type: "text"
     };
 
-    // Enhanced AI responses based on user input
+    // Enhanced AI responses with calculations
     const getAIResponse = (userText: string): Message => {
       const responses = {
+        retirement: {
+          text: "🏖️ **Retirement Planning Calculator**\n\nLet me help you calculate your retirement corpus needs:\n\n**Quick Calculation:**\n• Current age: 30 years\n• Retirement age: 60 years\n• Years to retirement: 30 years\n• Current monthly expenses: ₹50,000\n• Retirement monthly expenses (70%): ₹35,000\n• Annual expenses in retirement: ₹4,20,000\n• Required corpus (25x rule): ₹1.05 crores\n• With 6% inflation: ₹6.03 crores\n\n**Monthly SIP needed:**\n• At 12% returns: ₹25,000/month\n• At 10% returns: ₹35,000/month\n• At 8% returns: ₹50,000/month",
+          type: "calculation",
+          data: {
+            calculation: "retirement",
+            inputs: { currentAge: 30, retirementAge: 60, currentExpenses: 50000, inflation: 6, returns: 12 }
+          },
+          suggestions: ["Calculate with my details", "Plan SIP strategy", "Review investment options", "Set retirement goals"]
+        },
+        emergency: {
+          text: "🚨 **Emergency Fund Calculator**\n\n**How much should you save?**\n• 3 months expenses: ₹1,50,000\n• 6 months expenses: ₹3,00,000 (Recommended)\n• 12 months expenses: ₹6,00,000\n\n**Where to keep it:**\n• High-yield savings: 4-6% returns\n• Liquid mutual funds: 6-8% returns\n• Fixed deposits: 6-7% returns\n\n**Building Strategy:**\n• Save ₹25,000/month for 12 months\n• Use windfalls (bonus, tax refund)\n• Automate monthly transfers\n• Separate from regular savings",
+          type: "calculation",
+          data: {
+            calculation: "emergency",
+            inputs: { monthlyExpenses: 50000, months: 6 }
+          },
+          suggestions: ["Calculate my emergency fund", "Set monthly target", "Choose investment option", "Track progress"]
+        },
+        compound: {
+          text: "📈 **Compound Interest Calculator**\n\n**The Magic of Compounding:**\n• Principal: ₹1,00,000\n• Annual SIP: ₹10,000\n• Time period: 20 years\n• Expected returns: 12%\n\n**Results:**\n• Total invested: ₹25,00,000\n• Final value: ₹99,91,000\n• Interest earned: ₹74,91,000\n• Growth: 300%\n\n**Key Insights:**\n• Start early - time is your biggest asset\n• Even small amounts grow significantly\n• Consistency beats timing the market",
+          type: "calculation",
+          data: {
+            calculation: "compound",
+            inputs: { principal: 100000, monthlySIP: 10000, years: 20, returns: 12 }
+          },
+          suggestions: ["Calculate with my amount", "Plan SIP strategy", "Compare different scenarios", "Set investment goals"]
+        },
         save: {
           text: "💰 **Smart Saving Strategies:**\n\n**Immediate Actions (Save ₹3,000-5,000/month):**\n• Cook at home 4x/week instead of ordering (save ₹2,000)\n• Use public transport/carpool 3x/week (save ₹1,500)\n• Cancel unused subscriptions (save ₹500-1,000)\n\n**Medium-term (Save ₹2,000-4,000/month):**\n• Switch to generic brands for groceries (save ₹800)\n• Use energy-efficient appliances (save ₹500)\n• Negotiate better rates on insurance/utilities (save ₹700)\n• Use cashback apps and credit card rewards (save ₹500)\n\n**Long-term (Save ₹1,000-3,000/month):**\n• Refinance high-interest loans\n• Automate savings transfers\n• Invest in tax-saving instruments (ELSS, PPF)\n\n**Pro Tip:** Start with the 50/30/20 rule - 50% needs, 30% wants, 20% savings!",
           suggestions: ["Set up auto-savings", "Track daily expenses", "Use 50/30/20 rule", "Download cashback apps", "Plan weekly meals"]
@@ -92,7 +133,13 @@ const BudgetBuddy = () => {
       let response = responses.default;
       
       // Enhanced keyword matching for better responses
-      if (lowerText.includes("save") || lowerText.includes("money") || lowerText.includes("savings") || lowerText.includes("cut")) {
+      if (lowerText.includes("retirement") || lowerText.includes("pension") || lowerText.includes("nps") || lowerText.includes("epf") || lowerText.includes("retire")) {
+        response = responses.retirement;
+      } else if (lowerText.includes("emergency") || lowerText.includes("fund") || lowerText.includes("rainy day") || lowerText.includes("emergency fund")) {
+        response = responses.emergency;
+      } else if (lowerText.includes("compound") || lowerText.includes("interest") || lowerText.includes("sip") || lowerText.includes("calculate") || lowerText.includes("investment")) {
+        response = responses.compound;
+      } else if (lowerText.includes("save") || lowerText.includes("money") || lowerText.includes("savings") || lowerText.includes("cut")) {
         response = responses.save;
       } else if (lowerText.includes("spending") || lowerText.includes("analyze") || lowerText.includes("expense") || lowerText.includes("track")) {
         response = responses.spending;
@@ -100,16 +147,12 @@ const BudgetBuddy = () => {
         response = responses.goal;
       } else if (lowerText.includes("budget") || lowerText.includes("plan") || lowerText.includes("allocate")) {
         response = responses.budget;
-      } else if (lowerText.includes("invest") || lowerText.includes("investment") || lowerText.includes("sip") || lowerText.includes("mutual fund")) {
+      } else if (lowerText.includes("invest") || lowerText.includes("investment") || lowerText.includes("mutual fund")) {
         response = responses.investment;
       } else if (lowerText.includes("debt") || lowerText.includes("loan") || lowerText.includes("credit") || lowerText.includes("pay off")) {
         response = responses.debt;
-      } else if (lowerText.includes("emergency") || lowerText.includes("fund") || lowerText.includes("rainy day")) {
-        response = responses.emergency;
       } else if (lowerText.includes("tax") || lowerText.includes("deduction") || lowerText.includes("80c") || lowerText.includes("elss")) {
         response = responses.tax;
-      } else if (lowerText.includes("retirement") || lowerText.includes("pension") || lowerText.includes("nps") || lowerText.includes("epf")) {
-        response = responses.retirement;
       }
 
       return {
@@ -121,8 +164,15 @@ const BudgetBuddy = () => {
       };
     };
 
-    setMessages(prev => [...prev, userMessage, getAIResponse(inputMessage)]);
+    setMessages(prev => [...prev, userMessage]);
     setInputMessage("");
+    
+    // Simulate typing delay
+    setIsTyping(true);
+    setTimeout(() => {
+      setMessages(prev => [...prev, getAIResponse(inputMessage)]);
+      setIsTyping(false);
+    }, 1500);
   };
 
   const handleSuggestionClick = (suggestion: string) => {
@@ -130,7 +180,7 @@ const BudgetBuddy = () => {
   };
 
   return (
-    <Card className="bg-card shadow-card h-[600px] flex flex-col">
+    <Card className="bg-card shadow-card h-[500px] flex flex-col">
       <CardHeader className="pb-4">
         <CardTitle className="flex items-center space-x-2">
           <Bot className="h-5 w-5 text-finance-blue" />
@@ -143,7 +193,7 @@ const BudgetBuddy = () => {
       </CardHeader>
       
       <CardContent className="flex-1 flex flex-col space-y-4">
-        <ScrollArea className="flex-1 pr-4">
+        <ScrollArea ref={scrollAreaRef} className="flex-1 pr-4">
           <div className="space-y-4">
             {messages.map((message) => (
               <div key={message.id} className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"}`}>
@@ -159,13 +209,19 @@ const BudgetBuddy = () => {
                         ? "bg-finance-blue text-primary-foreground" 
                         : "bg-accent text-accent-foreground"
                     }`}>
+                      {message.type === "calculation" && (
+                        <div className="flex items-center gap-2 mb-2">
+                          <Calculator className="w-4 h-4 text-blue-500" />
+                          <Badge variant="secondary" className="text-xs">Calculation</Badge>
+                        </div>
+                      )}
                       <div className="text-sm whitespace-pre-line">
                         {message.text.split('\n').map((line, index) => {
                           if (line.startsWith('**') && line.endsWith('**')) {
                             return <strong key={index} className="font-semibold">{line.slice(2, -2)}</strong>;
                           } else if (line.startsWith('• ')) {
                             return <div key={index} className="ml-2">• {line.slice(2)}</div>;
-                          } else if (line.startsWith('💰') || line.startsWith('📊') || line.startsWith('🎯') || line.startsWith('💼') || line.startsWith('💳') || line.startsWith('🚨') || line.startsWith('👋') || line.startsWith('✅') || line.startsWith('⚠️') || line.startsWith('📈') || line.startsWith('📋') || line.startsWith('🚀') || line.startsWith('💡')) {
+                          } else if (line.startsWith('💰') || line.startsWith('📊') || line.startsWith('🎯') || line.startsWith('💼') || line.startsWith('💳') || line.startsWith('🚨') || line.startsWith('👋') || line.startsWith('✅') || line.startsWith('⚠️') || line.startsWith('📈') || line.startsWith('📋') || line.startsWith('🚀') || line.startsWith('💡') || line.startsWith('🏖️') || line.startsWith('🤖')) {
                             return <div key={index} className="font-semibold text-base">{line}</div>;
                           } else if (line.trim() === '') {
                             return <br key={index} />;
@@ -199,6 +255,26 @@ const BudgetBuddy = () => {
                 </div>
               </div>
             ))}
+            
+            {/* Typing Indicator */}
+            {isTyping && (
+              <div className="flex justify-start">
+                <div className="max-w-[80%]">
+                  <div className="flex items-start space-x-2">
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center bg-accent">
+                      <Bot className="w-4 h-4" />
+                    </div>
+                    <div className="rounded-lg p-3 bg-accent text-accent-foreground">
+                      <div className="flex items-center space-x-1">
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </ScrollArea>
         

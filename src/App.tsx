@@ -16,6 +16,7 @@ import { useLocation } from "react-router-dom";
 import AIAssistantPage from "./pages/AIAssistantPage";
 import Auth from "./pages/Auth";
 import { API } from "@/lib/api";
+import Footer from "./components/Footer";
 
 const queryClient = new QueryClient();
 
@@ -30,52 +31,55 @@ const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
 const AppInner = () => {
   const location = useLocation();
   return (
-    <AnimatePresence mode="wait">
-      <Routes location={location} key={location.pathname}>
-        <Route path="/auth" element={<Auth onSuccess={() => {}} />} />
-        <Route
-          path="/"
-          element={
-            <ProtectedRoute>
-              <DashboardPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/tracker"
-          element={
-            <ProtectedRoute>
-              <BudgetTrackerPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/add"
-          element={
-            <ProtectedRoute>
-              <AddExpensePage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/assistant"
-          element={
-            <ProtectedRoute>
-              <AIAssistantPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/groups"
-          element={
-            <ProtectedRoute>
-              <GroupsPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </AnimatePresence>
+    <div className="min-h-screen flex flex-col">
+      <AnimatePresence mode="wait">
+        <Routes location={location} key={location.pathname}>
+          <Route path="/auth" element={<Auth onSuccess={() => {}} />} />
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <DashboardPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/tracker"
+            element={
+              <ProtectedRoute>
+                <BudgetTrackerPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/add"
+            element={
+              <ProtectedRoute>
+                <AddExpensePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/assistant"
+            element={
+              <ProtectedRoute>
+                <AIAssistantPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/groups"
+            element={
+              <ProtectedRoute>
+                <GroupsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </AnimatePresence>
+      <Footer />
+    </div>
   );
 };
 
