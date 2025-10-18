@@ -17,6 +17,7 @@ import AIAssistantPage from "./pages/AIAssistantPage";
 import Auth from "./pages/Auth";
 import { API } from "@/lib/api";
 import Footer from "./components/Footer";
+import FloatingAIAssistant from "./components/FloatingAIAssistant";
 
 const queryClient = new QueryClient();
 
@@ -30,6 +31,8 @@ const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
 
 const AppInner = () => {
   const location = useLocation();
+  const isAuthPage = location.pathname === "/auth";
+  
   return (
     <div className="min-h-screen flex flex-col">
       <AnimatePresence mode="wait">
@@ -78,7 +81,8 @@ const AppInner = () => {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </AnimatePresence>
-      <Footer />
+      {!isAuthPage && <Footer />}
+      {!isAuthPage && <FloatingAIAssistant />}
     </div>
   );
 };

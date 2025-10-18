@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -45,11 +45,37 @@ const BudgetDashboard = () => {
 
   const [showAchievement, setShowAchievement] = useState(false);
   const [currentAchievement, setCurrentAchievement] = useState<typeof achievements[0] | null>(null);
+  const [userBudgetSet, setUserBudgetSet] = useState(false);
+  const [userBudgetInput, setUserBudgetInput] = useState("");
+  const [hasExpenses, setHasExpenses] = useState(false);
 
   const totalBudget = getTotalBudget();
   const totalSpent = getTotalSpent();
   const totalSaved = getTotalSaved();
   const budgetPercentage = Math.round((totalSpent / totalBudget) * 100);
+
+  // Check if user has entered any expenses
+  useEffect(() => {
+    const hasAnyExpenses = budgetCategories.some(category => category.spent > 0);
+    setHasExpenses(hasAnyExpenses);
+  }, [budgetCategories]);
+
+  const handleSetBudget = () => {
+    const budgetValue = parseFloat(userBudgetInput);
+    if (budgetValue > 0) {
+      // Set the budget by adjusting all category limits proportionally
+      const currentTotal = getTotalBudget();
+      if (currentTotal > 0) {
+        const scale = budgetValue / currentTotal;
+        budgetCategories.forEach((c) => adjustBudgetLimit(c.id, Math.round(c.limit * scale)));
+      } else {
+        // If no current budget, distribute evenly across categories
+        const perCategory = budgetValue / budgetCategories.length;
+        budgetCategories.forEach((c) => adjustBudgetLimit(c.id, Math.round(perCategory)));
+      }
+      setUserBudgetSet(true);
+    }
+  };
 
   const handleAchievementClick = (achievement: typeof achievements[0]) => {
     setCurrentAchievement(achievement);
@@ -204,131 +230,175 @@ const BudgetDashboard = () => {
 
       {/* Budget Settings */}
       <Card>
-        <CardContent className="p-4 flex items-center justify-between flex-wrap gap-3">
-          <div className="flex items-center gap-2">
-            <div className="text-sm text-gray-600">Set total budget</div>
-            <input
-              type="number"
-              defaultValue={totalBudget}
-              className="w-36 h-9 rounded-md border px-2 bg-background"
-              onBlur={(e) => {
-                const v = Number(e.target.value);
-                if (!isFinite(v) || v <= 0) return;
-                // Re-scale category limits proportionally
-                const currentTotal = getTotalBudget();
-                if (currentTotal <= 0) return;
-                const scale = v / currentTotal;
-                budgetCategories.forEach((c) => adjustBudgetLimit(c.id, Math.round(c.limit * scale)));
-              }}
-            />
-          </div>
+        <CardContent className="p-4">
+          {!userBudgetSet ? (
+            <div className="text-center space-y-4">
+              <div className="space-y-2">
+                <h3 className="text-lg font-semibold text-gray-900">Set Your Monthly Budget</h3>
+                <p className="text-sm text-gray-600">Enter your total monthly budget to get started with tracking</p>
+              </div>
+              <div className="flex items-center justify-center gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600">₹</span>
+                  <input
+                    type="number"
+                    placeholder="50000"
+                    value={userBudgetInput}
+                    onChange={(e) => setUserBudgetInput(e.target.value)}
+                    className="w-40 h-10 rounded-md border px-3 bg-background text-center text-lg font-semibold"
+                  />
+                </div>
+                <Button 
+                  onClick={handleSetBudget}
+                  disabled={!userBudgetInput || parseFloat(userBudgetInput) <= 0}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  Set Budget
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <div className="flex items-center gap-2">
+                <div className="text-sm text-gray-600">Total budget: ₹{totalBudget.toLocaleString()}</div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setUserBudgetSet(false);
+                    setUserBudgetInput("");
+                  }}
+                >
+                  Change
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
       {/* EXCLUSIVE RENDERING: Only show alerts OR rewards or neutral, never both */}
-      
-      {/* Show Overspending Alerts ONLY if there are overspending issues */}
-      {hasOverspending && (
-        <div className="space-y-4">
-          <h2 className="text-xl font-bold text-red-600 flex items-center gap-2">
-            <AlertTriangle className="w-5 h-5" />
-            Budget Alerts ({alerts.length})
-          </h2>
-          {alerts.map((alert) => (
-            <OverspendingAlert
-              key={alert.id}
-              alert={alert}
-              onDismiss={dismissAlert}
-              onAdjustBudget={adjustBudgetLimit}
-            />
-          ))}
-        </div>
-      )}
+      {/* Only show rewards/warnings after user has set budget and entered expenses */}
+      {userBudgetSet && hasExpenses && (
+        <>
+          {/* Show Overspending Alerts ONLY if there are overspending issues */}
+          {hasOverspending && (
+            <div className="space-y-4">
+              <h2 className="text-xl font-bold text-red-600 flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5" />
+                Budget Alerts ({alerts.length})
+              </h2>
+              {alerts.map((alert) => (
+                <OverspendingAlert
+                  key={alert.id}
+                  alert={alert}
+                  onDismiss={dismissAlert}
+                  onAdjustBudget={adjustBudgetLimit}
+                />
+              ))}
+            </div>
+          )}
 
-      {/* Show Achievements ONLY if there are no overspending issues */}
-      {hasUnderspending && (
-        <div className="space-y-4">
-          <h2 className="text-xl font-bold text-green-600 flex items-center gap-2">
-            <Trophy className="w-5 h-5" />
-            Reward
-          </h2>
-          <Card className="border-green-200">
-            <CardContent className="p-4 space-y-3">
-              <div className="text-sm text-gray-700">
-                {`Great job! You saved ₹${(totalBudget - totalSpent).toLocaleString()}. Keep this up every ${timePeriod}!`}
+          {/* Show Achievements ONLY if there are no overspending issues */}
+          {hasUnderspending && (
+            <div className="space-y-4">
+              <h2 className="text-xl font-bold text-green-600 flex items-center gap-2">
+                <Trophy className="w-5 h-5" />
+                Reward
+              </h2>
+              <Card className="border-green-200">
+                <CardContent className="p-4 space-y-3">
+                  <div className="text-sm text-gray-700">
+                    {`Great job! You saved ₹${(totalBudget - totalSpent).toLocaleString()}. Keep this up every ${timePeriod}!`}
+                  </div>
+                  <Button size="sm" onClick={triggerReward} className="bg-green-600 hover:bg-green-700">
+                    Reveal Reward
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Show neutral message if neither overspending nor underspending */}
+          {!hasOverspending && !hasUnderspending && (
+            <div className="text-center py-8">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                <Target className="w-12 h-12 text-blue-500 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-blue-800 mb-2">Perfect!</h3>
+                <p className="text-blue-600">You utilized your budget exactly as planned.</p>
               </div>
-              <Button size="sm" onClick={triggerReward} className="bg-green-600 hover:bg-green-700">
-                Reveal Reward
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+          )}
+        </>
       )}
 
-      {/* Show neutral message if neither overspending nor underspending */}
-      {!hasOverspending && !hasUnderspending && (
+      {/* Show message when budget is set but no expenses entered */}
+      {userBudgetSet && !hasExpenses && (
         <div className="text-center py-8">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-            <Target className="w-12 h-12 text-blue-500 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-blue-800 mb-2">Perfect!</h3>
-            <p className="text-blue-600">You utilized your budget exactly as planned.</p>
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+            <Target className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-yellow-800 mb-2">Start Tracking Expenses</h3>
+            <p className="text-yellow-600">Add some expenses to see your budget analysis and get rewards!</p>
           </div>
         </div>
       )}
 
-      {/* Overall Budget Summary */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <DollarSign className="w-5 h-5" />
-            Budget Overview
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">₹{totalBudget.toLocaleString()}</div>
-              <div className="text-sm text-gray-600">Total Budget</div>
+      {/* Overall Budget Summary - Only show when budget is set */}
+      {userBudgetSet && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <DollarSign className="w-5 h-5" />
+              Budget Overview
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-blue-600">₹{totalBudget.toLocaleString()}</div>
+                <div className="text-sm text-gray-600">Total Budget</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-red-600">₹{totalSpent.toLocaleString()}</div>
+                <div className="text-sm text-gray-600">Total Spent</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-green-600">₹{totalSaved.toLocaleString()}</div>
+                <div className="text-sm text-gray-600">Total Saved</div>
+              </div>
             </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-red-600">₹{totalSpent.toLocaleString()}</div>
-              <div className="text-sm text-gray-600">Total Spent</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">₹{totalSaved.toLocaleString()}</div>
-              <div className="text-sm text-gray-600">Total Saved</div>
-            </div>
-          </div>
 
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span>Budget Usage</span>
-              <span className={budgetPercentage > 100 ? 'text-red-600 font-semibold' : 'text-gray-600'}>
-                {budgetPercentage}%
-              </span>
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span>Budget Usage</span>
+                <span className={budgetPercentage > 100 ? 'text-red-600 font-semibold' : 'text-gray-600'}>
+                  {budgetPercentage}%
+                </span>
+              </div>
+              <Progress 
+                value={Math.min(budgetPercentage, 100)} 
+                className="h-3"
+              />
+              {budgetPercentage > 100 && (
+                <Alert className="border-red-200 bg-red-50">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription className="text-red-800">
+                    You've exceeded your budget by ₹{(totalSpent - totalBudget).toLocaleString()}
+                  </AlertDescription>
+                </Alert>
+              )}
             </div>
-            <Progress 
-              value={Math.min(budgetPercentage, 100)} 
-              className="h-3"
-            />
-            {budgetPercentage > 100 && (
-              <Alert className="border-red-200 bg-red-50">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertDescription className="text-red-800">
-                  You've exceeded your budget by ₹{(totalSpent - totalBudget).toLocaleString()}
-                </AlertDescription>
-              </Alert>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
-      {/* Category Breakdown */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Category Breakdown</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      {/* Category Breakdown - Only show when budget is set */}
+      {userBudgetSet && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Category Breakdown</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
           {budgetCategories.map((category) => {
             const status = getCategoryStatus(category);
             const percentage = Math.round((category.spent / category.limit) * 100);
@@ -399,8 +469,9 @@ const BudgetDashboard = () => {
               </div>
             );
           })}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Modals */}
       {showAchievement && currentAchievement && (
