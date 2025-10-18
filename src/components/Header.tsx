@@ -1,16 +1,15 @@
 import { Button } from "@/components/ui/button";
-import { MessageCircle, PlusCircle, User, LogOut, BarChart3, Users } from "lucide-react";
+import { PlusCircle, User, LogOut, BarChart3, Users, Target } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { API } from "@/lib/api";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useEffect, useState } from "react";
 
 interface HeaderProps {
-  onAIAssistantClick?: () => void;
   onAddTransactionClick?: () => void;
 }
 
-const Header = ({ onAIAssistantClick, onAddTransactionClick }: HeaderProps) => {
+const Header = ({ onAddTransactionClick }: HeaderProps) => {
   const navigate = useNavigate();
   const [name, setName] = useState<string | null>(null);
   useEffect(() => {
@@ -53,12 +52,13 @@ const Header = ({ onAIAssistantClick, onAddTransactionClick }: HeaderProps) => {
               Dashboard
             </Button>
             <Button 
-              size="sm"
-              className="bg-blue-600 hover:bg-blue-700 text-white hover:scale-105 transition-all duration-200"
-              onClick={() => navigate("/add")}
+              variant="outline" 
+              size="sm" 
+              className="hidden sm:flex text-xs border-gray-300 text-gray-700 hover:bg-gray-50 hover:scale-105 transition-all duration-200"
+              onClick={() => navigate("/tracker")}
             >
-              <PlusCircle className="w-4 h-4 mr-1" />
-              Add Transaction
+              <Target className="w-4 h-4 mr-1" />
+              Budget Tracker
             </Button>
             <Button 
               variant="outline" 
@@ -70,13 +70,12 @@ const Header = ({ onAIAssistantClick, onAddTransactionClick }: HeaderProps) => {
               Groups
             </Button>
             <Button 
-              variant="outline" 
-              size="sm" 
-              className="hidden sm:flex text-xs border-gray-300 text-gray-700 hover:bg-gray-50 hover:scale-105 transition-all duration-200"
-              onClick={() => navigate("/assistant")}
+              size="sm"
+              className="bg-blue-600 hover:bg-blue-700 text-white hover:scale-105 transition-all duration-200"
+              onClick={() => navigate("/add")}
             >
-              <MessageCircle className="w-4 h-4 mr-1" />
-              AI Assistant
+              <PlusCircle className="w-4 h-4 mr-1" />
+              Add Transaction
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
